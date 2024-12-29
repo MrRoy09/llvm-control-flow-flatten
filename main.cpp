@@ -5,7 +5,7 @@ int main(){
     int x =50;
     printf("we outside the loop\n");
     while(y<100){
-        printf("we in the loop\n");
+        printf("%d",y);
         if(y==10){
             printf("we in the subcase 10\n");
             y+=1;

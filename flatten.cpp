@@ -45,7 +45,6 @@ namespace
       }
 
       BasicBlock *new_block = entry_block.splitBasicBlockBefore(entry_block.getTerminator());
-
       for (auto &BB : F)
       {
         BasicBlocks.push_back(&BB);
@@ -63,10 +62,11 @@ namespace
       }
 
       auto *branchInstruction = dyn_cast<BranchInst>(conditionalBlock->getTerminator());
-      Value *condition = branchInstruction->getCondition();
-      switchVar = new AllocaInst(Type::getInt32Ty(F.getContext()), 0, "switchVar", branchInstruction);
-      new StoreInst(ConstantInt::get(Type::getInt32Ty(F.getContext()), 1), switchVar, branchInstruction);
-      load = new LoadInst(IntegerType::getInt32Ty(F.getContext()), switchVar, "switchVar", branchInstruction);
+      Instruction *firstInst = conditionalBlock->getFirstNonPHI();
+      ICmpInst *condition = dyn_cast<ICmpInst>(branchInstruction->getCondition());
+      switchVar = new AllocaInst(Type::getInt32Ty(F.getContext()), 0, "switchVar", firstInst);
+      new StoreInst(ConstantInt::get(Type::getInt32Ty(F.getContext()), 1), switchVar, firstInst);
+      load = new LoadInst(IntegerType::getInt32Ty(F.getContext()), switchVar, "switchVar", firstInst);
       Value *cmp = new ICmpInst(branchInstruction, ICmpInst::ICMP_EQ, load, ConstantInt::get(Type::getInt32Ty(F.getContext()), 0), "cmp");
       BasicBlock *trueBlock = branchInstruction->getSuccessor(0);
       BasicBlock *falseBlock = branchInstruction->getSuccessor(1);
@@ -75,25 +75,46 @@ namespace
       outs() << load << "\n";
 
       BasicBlock *switch_case_3 = trueBlock;
+      new StoreInst(ConstantInt::get(Type::getInt32Ty(F.getContext()), 2), switchVar, trueBlock->getTerminator());
       BasicBlock *switch_block = BasicBlock::Create(F.getContext(), "switch_statement", &F);
-      dyn_cast<BranchInst>(conditionalBlock->getTerminator())->setSuccessor(0, switch_block);
+      dyn_cast<BranchInst>(conditionalBlock->getTerminator())->setSuccessor(1, switch_block);
       SwitchInst *switchI = SwitchInst::Create(load, falseBlock, 2, switch_block);
 
+      BasicBlock *newconditionalBlock = conditionalBlock->splitBasicBlockBefore(load);
+      for (auto *pred : predecessors(newconditionalBlock))
+      {
+        if (pred != &entry_block)
+        {
+          Instruction *terminator = pred->getTerminator();
+          for (unsigned i = 0; i < terminator->getNumSuccessors(); i++)
+          {
+            if (terminator->getSuccessor(i) == newconditionalBlock)
+            {
+              outs() << "Replacing successor\n";
+              terminator->setSuccessor(i, conditionalBlock);
+            }
+          }
+        }
+      }
+      conditionalBlock->printAsOperand(outs(), 0);
+      outs() << "\n";
 
       BasicBlock *switch_case_1 = BasicBlock::Create(F.getContext(), "case_1", &F);
       new StoreInst(ConstantInt::get(F.getContext(), APInt(32, 2)), switchVar, switch_case_1);
       BranchInst::Create(conditionalBlock, switch_case_1);
 
       BasicBlock *switch_case_2 = BasicBlock::Create(F.getContext(), "case_2", &F);
-      BasicBlock *thenBlock = BasicBlock::Create(F.getContext(), "case_2", &F);
+      BasicBlock *thenBlock = BasicBlock::Create(F.getContext(), "case_2_then", &F);
       new StoreInst(ConstantInt::get(F.getContext(), APInt(32, 3)), switchVar, thenBlock);
       BranchInst::Create(conditionalBlock, thenBlock);
 
-      BasicBlock *elseBlock = BasicBlock::Create(F.getContext(), "case_2", &F);
+      BasicBlock *elseBlock = BasicBlock::Create(F.getContext(), "case_2_else", &F);
       new StoreInst(ConstantInt::get(F.getContext(), APInt(32, 0)), switchVar, elseBlock);
       BranchInst::Create(conditionalBlock, elseBlock);
-      BranchInst::Create(thenBlock,elseBlock,condition,switch_case_2);
-
+      ICmpInst* condition_replicate = (ICmpInst*)condition->clone();
+      IRBuilder<>Builder(switch_case_2);
+      Builder.Insert(condition_replicate);
+      BranchInst::Create(thenBlock, elseBlock, condition_replicate, switch_case_2);
 
       switchI->addCase(ConstantInt::get(F.getContext(), APInt(32, 1)), switch_case_1);
       switchI->addCase(ConstantInt::get(F.getContext(), APInt(32, 2)), switch_case_2);
