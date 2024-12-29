@@ -2,3 +2,7 @@ clang++ -shared flatten.cpp  -fPIC -o pass.so
 clang++ -fpass-plugin=./pass.so -S -emit-llvm -o main.ll main.cpp -fPIC
 opt -passes=dot-cfg --disable-output main.ll
 dot -Tpng .main.dot -o ./cfg/main3.png
+
+clang++ -fpass-plugin=./pass.so -o main1 main.cpp -fPIC
+clang++ -o main main.cpp
+
