@@ -35,8 +35,7 @@ namespace
 
     bool flattenFunction(Function &F)
     {
-      AllocaInst *switchVar = NULL;
-      LoadInst *load = NULL;
+      std::vector<BasicBlock*> target_conditionals;
       std::vector<BasicBlock *> BasicBlocks;
       BasicBlock &entry_block = F.getEntryBlock();
       if (F.size() < 2)
@@ -51,16 +50,25 @@ namespace
       }
 
       BasicBlock *conditionalBlock = new_block;
-      while (!checkIsConditional(conditionalBlock->getTerminator()))
-      {
-        conditionalBlock = conditionalBlock->getSingleSuccessor();
-        if (!conditionalBlock)
-        {
-          errs() << "Multiple successors detected without conditional branch instruction\n";
-          return 0;
+
+      for(auto* bb:BasicBlocks){
+        if(checkIsConditional(bb->getTerminator())){
+          target_conditionals.push_back(bb);
         }
       }
 
+      for(auto i= target_conditionals.rbegin(); i!=target_conditionals.rend();i++){
+        flatten_conditional(*i,F);
+      }
+      return 1;
+    }
+
+    bool flatten_conditional(BasicBlock *conditionalBlock, Function &F)
+    {
+      AllocaInst *switchVar = NULL;
+      LoadInst *load = NULL;
+      std::vector<BasicBlock *> BasicBlocks;
+      BasicBlock &entry_block = F.getEntryBlock();
       auto *branchInstruction = dyn_cast<BranchInst>(conditionalBlock->getTerminator());
       Instruction *firstInst = conditionalBlock->getFirstNonPHI();
       ICmpInst *condition = dyn_cast<ICmpInst>(branchInstruction->getCondition());
@@ -83,7 +91,7 @@ namespace
       BasicBlock *newconditionalBlock = conditionalBlock->splitBasicBlockBefore(load);
       for (auto *pred : predecessors(newconditionalBlock))
       {
-        if (pred != &entry_block)
+        if (pred != (*predecessors(newconditionalBlock).begin()))
         {
           Instruction *terminator = pred->getTerminator();
           for (unsigned i = 0; i < terminator->getNumSuccessors(); i++)
@@ -111,8 +119,8 @@ namespace
       BasicBlock *elseBlock = BasicBlock::Create(F.getContext(), "case_2_else", &F);
       new StoreInst(ConstantInt::get(F.getContext(), APInt(32, 0)), switchVar, elseBlock);
       BranchInst::Create(conditionalBlock, elseBlock);
-      ICmpInst* condition_replicate = (ICmpInst*)condition->clone();
-      IRBuilder<>Builder(switch_case_2);
+      ICmpInst *condition_replicate = (ICmpInst *)condition->clone();
+      IRBuilder<> Builder(switch_case_2);
       Builder.Insert(condition_replicate);
       BranchInst::Create(thenBlock, elseBlock, condition_replicate, switch_case_2);
 
