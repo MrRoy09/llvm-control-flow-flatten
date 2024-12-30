@@ -80,7 +80,6 @@ namespace
       BasicBlock *falseBlock = branchInstruction->getSuccessor(1);
       BranchInst::Create(falseBlock, trueBlock, cmp, branchInstruction);
       branchInstruction->removeFromParent();
-      outs() << load << "\n";
 
       BasicBlock *switch_case_3 = trueBlock;
       new StoreInst(ConstantInt::get(Type::getInt32Ty(F.getContext()), 2), switchVar, trueBlock->getTerminator());
@@ -98,14 +97,11 @@ namespace
           {
             if (terminator->getSuccessor(i) == newconditionalBlock)
             {
-              outs() << "Replacing successor\n";
               terminator->setSuccessor(i, conditionalBlock);
             }
           }
         }
       }
-      conditionalBlock->printAsOperand(outs(), 0);
-      outs() << "\n";
 
       BasicBlock *switch_case_1 = BasicBlock::Create(F.getContext(), "case_1", &F);
       new StoreInst(ConstantInt::get(F.getContext(), APInt(32, 2)), switchVar, switch_case_1);
