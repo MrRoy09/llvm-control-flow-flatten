@@ -7,10 +7,7 @@ module asm ".globl _ZSt21ios_base_library_initv"
 
 @.str = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 @.str.1 = private unnamed_addr constant [21 x i8] c"we outside the loop\0A\00", align 1
-@.str.2 = private unnamed_addr constant [22 x i8] c"we in the subcase 10\0A\00", align 1
-@.str.3 = private unnamed_addr constant [22 x i8] c"we in the subcase 11\0A\00", align 1
-@.str.4 = private unnamed_addr constant [24 x i8] c"we in the else subcase\0A\00", align 1
-@.str.5 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 ; Function Attrs: mustprogress noinline norecurse optnone uwtable
 define noundef i32 @main() #0 {
@@ -23,98 +20,27 @@ define noundef i32 @main() #0 {
   %5 = call i32 (ptr, ...) @printf(ptr noundef @.str.1)
   br label %6
 
-6:                                                ; preds = %0
-  br label %7
+6:                                                ; preds = %12, %0
+  %7 = load i32, ptr %2, align 4
+  %8 = icmp slt i32 %7, 100
+  br i1 %8, label %9, label %15
 
-7:                                                ; preds = %6
-  %8 = alloca i32, align 4
-  store i32 1, ptr %8, align 4
-  br label %9
+9:                                                ; preds = %6
+  %10 = load i32, ptr %2, align 4
+  %11 = call i32 (ptr, ...) @printf(ptr noundef @.str.2, i32 noundef %10)
+  br label %12
 
-9:                                                ; preds = %51, %50, %47, %41, %7
-  %10 = load i32, ptr %8, align 4
-  %11 = load i32, ptr %2, align 4
-  %12 = icmp slt i32 %11, 100
-  %13 = icmp eq i32 %10, 0
-  br i1 %13, label %42, label %46
+12:                                               ; preds = %9
+  %13 = load i32, ptr %2, align 4
+  %14 = add nsw i32 %13, 1
+  store i32 %14, ptr %2, align 4
+  br label %6, !llvm.loop !5
 
-14:                                               ; preds = %46, <null operand!>
-  %15 = load i32, ptr %2, align 4
-  %16 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %15)
-  %17 = load i32, ptr %2, align 4
-  %18 = icmp eq i32 %17, 10
-  store i32 2, ptr %8, align 4
-  br i1 %18, label %19, label %25
-
-19:                                               ; preds = %14
-  %20 = call i32 (ptr, ...) @printf(ptr noundef @.str.2)
-  %21 = load i32, ptr %2, align 4
-  %22 = add nsw i32 %21, 1
-  store i32 %22, ptr %2, align 4
-  %23 = load i32, ptr %3, align 4
-  %24 = add nsw i32 %23, 10
-  store i32 %24, ptr %3, align 4
-  br label %41
-
-25:                                               ; preds = %14
-  %26 = load i32, ptr %2, align 4
-  %27 = icmp eq i32 %26, 11
-  br i1 %27, label %28, label %34
-
-28:                                               ; preds = %25
-  %29 = call i32 (ptr, ...) @printf(ptr noundef @.str.3)
-  %30 = load i32, ptr %2, align 4
-  %31 = add nsw i32 %30, 2
-  store i32 %31, ptr %2, align 4
-  %32 = load i32, ptr %3, align 4
-  %33 = sub nsw i32 %32, 10
-  store i32 %33, ptr %3, align 4
-  br label %40
-
-34:                                               ; preds = %25
-  %35 = call i32 (ptr, ...) @printf(ptr noundef @.str.4)
-  %36 = load i32, ptr %2, align 4
-  %37 = add nsw i32 %36, 3
-  store i32 %37, ptr %2, align 4
-  %38 = load i32, ptr %3, align 4
-  %39 = sub nsw i32 %38, 20
-  store i32 %39, ptr %3, align 4
-  br label %40
-
-40:                                               ; preds = %34, %28
-  br label %41
-
-41:                                               ; preds = %40, %19
-  br label %9, !llvm.loop !5
-
-42:                                               ; preds = %46, %9, <null operand!>
-  %43 = load i32, ptr %2, align 4
-  %44 = call i32 (ptr, ...) @printf(ptr noundef @.str.5, i32 noundef %43)
-  %45 = load i32, ptr %2, align 4
-  ret i32 %45
-
-46:                                               ; preds = %9
-  switch i32 %10, label %42 [
-    i32 1, label %47
-    i32 2, label %48
-    i32 3, label %14
-  ]
-
-47:                                               ; preds = %46
-  store i32 2, ptr %8, align 4
-  br label %9
-
-48:                                               ; preds = %46
-  %49 = icmp slt i32 %11, 100
-  br i1 %49, label %50, label %51
-
-50:                                               ; preds = %48
-  store i32 3, ptr %8, align 4
-  br label %9
-
-51:                                               ; preds = %48
-  store i32 0, ptr %8, align 4
-  br label %9
+15:                                               ; preds = %6
+  %16 = load i32, ptr %2, align 4
+  %17 = call i32 (ptr, ...) @printf(ptr noundef @.str.2, i32 noundef %16)
+  %18 = load i32, ptr %2, align 4
+  ret i32 %18
 }
 
 declare i32 @__isoc23_scanf(ptr noundef, ...) #1
