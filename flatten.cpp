@@ -6,7 +6,6 @@
 #include <llvm/IR/Instructions.h>
 #include "llvm/Pass.h"
 #include <vector>
-#include <unordered_map>
 
 using namespace llvm;
 
@@ -55,6 +54,10 @@ namespace
         if(checkIsConditional(bb->getTerminator())){
           target_conditionals.push_back(bb);
         }
+      }
+      
+      if(target_conditionals.size()==0){
+        return 0;
       }
 
       for(auto i= target_conditionals.rbegin(); i!=target_conditionals.rend();i++){
@@ -131,7 +134,7 @@ namespace
 PassPluginLibraryInfo getPassPluginInfo()
 {
   static std::atomic<bool> ONCE_FLAG(false);
-  return {LLVM_PLUGIN_API_VERSION, "obfs", "0.0.1",
+  return {LLVM_PLUGIN_API_VERSION, "control-flow-flatten", "0.0.1",
           [](PassBuilder &PB)
           {
             try
