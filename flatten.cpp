@@ -34,7 +34,7 @@ namespace
 
     bool flattenFunction(Function &F)
     {
-      std::vector<BasicBlock*> target_conditionals;
+      std::vector<BasicBlock *> target_conditionals;
       std::vector<BasicBlock *> BasicBlocks;
       BasicBlock &entry_block = F.getEntryBlock();
       if (F.size() < 2)
@@ -42,32 +42,36 @@ namespace
         return 0;
       }
 
-      BasicBlock *new_block = entry_block.splitBasicBlockBefore(entry_block.getTerminator());
+      // BasicBlock *new_block = entry_block.splitBasicBlockBefore(entry_block.getTerminator());
       for (auto &BB : F)
       {
         BasicBlocks.push_back(&BB);
       }
 
-      BasicBlock *conditionalBlock = new_block;
-
-      for(auto* bb:BasicBlocks){
-        if(checkIsConditional(bb->getTerminator())){
+      for (auto *bb : BasicBlocks)
+      {
+        if (checkIsConditional(bb->getTerminator()))
+        {
           target_conditionals.push_back(bb);
         }
       }
-      
-      if(target_conditionals.size()==0){
+
+      if (target_conditionals.size() == 0)
+      {
+        outs()<<"No conditionals found in this function\n";
         return 0;
       }
 
-      for(auto i= target_conditionals.rbegin(); i!=target_conditionals.rend();i++){
-        flatten_conditional(*i,F);
+      for (auto i = target_conditionals.rbegin(); i != target_conditionals.rend(); i++)
+      {
+        flatten_conditional(*i, F);
       }
       return 1;
     }
 
     bool flatten_conditional(BasicBlock *conditionalBlock, Function &F)
     {
+      BasicBlock* temp = conditionalBlock->splitBasicBlockBefore(conditionalBlock->getTerminator());
       AllocaInst *switchVar = NULL;
       LoadInst *load = NULL;
       std::vector<BasicBlock *> BasicBlocks;
@@ -126,6 +130,11 @@ namespace
       switchI->addCase(ConstantInt::get(F.getContext(), APInt(32, 1)), switch_case_1);
       switchI->addCase(ConstantInt::get(F.getContext(), APInt(32, 2)), switch_case_2);
       switchI->addCase(ConstantInt::get(F.getContext(), APInt(32, 3)), switch_case_3);
+      return 1;
+    }
+
+    bool flattenSwitchStatements(BasicBlock *switch_block, Function &F)
+    {
       return 1;
     }
   };
