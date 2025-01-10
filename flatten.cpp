@@ -56,33 +56,29 @@ namespace
         }
       }
 
-      if (target_conditionals.size() == 0)
+      if (target_conditionals.size() != 0)
       {
-        outs() << "No conditionals found in this function\n";
-        return 0;
+        for (auto i = target_conditionals.rbegin(); i != target_conditionals.rend(); i++)
+        {
+          flatten_conditional(*i, F);
+        }
       }
-
-      for (auto i = target_conditionals.rbegin(); i != target_conditionals.rend(); i++)
-      {
-        flatten_conditional(*i, F);
-      }
-
       return 1;
     }
 
     bool flatten_conditional(BasicBlock *conditionalBlock, Function &F)
     {
       BasicBlock *temp = conditionalBlock->splitBasicBlockBefore(conditionalBlock->getTerminator());
+      auto *branchInstruction = dyn_cast<BranchInst>(conditionalBlock->getTerminator());
+      ICmpInst *condition = dyn_cast<ICmpInst>(branchInstruction->getCondition()); 
+      Instruction *firstInst = conditionalBlock->getFirstNonPHI();
+
       AllocaInst *switchVar = NULL;
       LoadInst *load = NULL;
-      std::vector<BasicBlock *> BasicBlocks;
-      BasicBlock &entry_block = F.getEntryBlock();
-      auto *branchInstruction = dyn_cast<BranchInst>(conditionalBlock->getTerminator());
-      Instruction *firstInst = conditionalBlock->getFirstNonPHI();
-      ICmpInst *condition = dyn_cast<ICmpInst>(branchInstruction->getCondition());
       switchVar = new AllocaInst(Type::getInt32Ty(F.getContext()), 0, "switchVar", firstInst);
       new StoreInst(ConstantInt::get(Type::getInt32Ty(F.getContext()), 1), switchVar, firstInst);
       load = new LoadInst(IntegerType::getInt32Ty(F.getContext()), switchVar, "switchVar", firstInst);
+
       Value *cmp = new ICmpInst(branchInstruction, ICmpInst::ICMP_EQ, load, ConstantInt::get(Type::getInt32Ty(F.getContext()), 0), "cmp");
       BasicBlock *trueBlock = branchInstruction->getSuccessor(0);
       BasicBlock *falseBlock = branchInstruction->getSuccessor(1);
@@ -96,6 +92,7 @@ namespace
       SwitchInst *switchI = SwitchInst::Create(load, falseBlock, 2, switch_block);
 
       BasicBlock *newconditionalBlock = conditionalBlock->splitBasicBlockBefore(load);
+
       for (auto *pred : predecessors(newconditionalBlock))
       {
         if (pred != (*predecessors(newconditionalBlock).begin()))
@@ -119,7 +116,6 @@ namespace
       BasicBlock *thenBlock = BasicBlock::Create(F.getContext(), "case_2_then", &F);
       new StoreInst(ConstantInt::get(F.getContext(), APInt(32, 3)), switchVar, thenBlock);
       BranchInst::Create(conditionalBlock, thenBlock);
-
       BasicBlock *elseBlock = BasicBlock::Create(F.getContext(), "case_2_else", &F);
       new StoreInst(ConstantInt::get(F.getContext(), APInt(32, 0)), switchVar, elseBlock);
       BranchInst::Create(conditionalBlock, elseBlock);
@@ -130,11 +126,6 @@ namespace
       switchI->addCase(ConstantInt::get(F.getContext(), APInt(32, 1)), switch_case_1);
       switchI->addCase(ConstantInt::get(F.getContext(), APInt(32, 2)), switch_case_2);
       switchI->addCase(ConstantInt::get(F.getContext(), APInt(32, 3)), switch_case_3);
-      return 1;
-    }
-
-    bool flattenSwitchStatements(BasicBlock *switch_block, Function &F)
-    {
       return 1;
     }
   };
