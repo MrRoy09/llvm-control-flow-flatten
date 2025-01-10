@@ -14,5 +14,5 @@ Compile pass using
 # Blog post
 I wrote this code for a blog post on introduction to obfuscation using llvm. Find that here:
 
-<a href="to be updated"> Control Flow Flattening using LLVM Pass </a>
+<a href="https://21verses.blog/2025/01/10/post/"> Control Flow Flattening using LLVM Pass </a>
 
