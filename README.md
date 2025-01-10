@@ -2,7 +2,7 @@
 A toy program to demonstrate control flow flattening using LLVM passes. Flattens the CFG of each function. If the function has switch statements, run `switchtoif.so` to convert `switch` statements to series of nested `if` and then run `flatten.so`
 
 # Running the pass
-Simple compile your program using
+Compile your program using
 
 ``` clang++ -fpass-plugin=./flatten.so ./file.cpp -o main```
 
